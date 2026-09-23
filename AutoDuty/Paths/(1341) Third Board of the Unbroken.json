@@ -309,7 +309,7 @@
       "Tag": "None",
       "Name": "MoveTo",
       "Position": {
-        "X": -705.0,
+        "X": -695.0,
         "Y": 0.0,
         "Z": -34.0
       },
@@ -439,15 +439,15 @@
       "Tag": "None",
       "Name": "Wait",
       "Position": {
-        "X": -705.0,
+        "X": -695.0,
         "Y": 0.0,
-        "Z": -42.0
+        "Z": -44.0
       },
       "Arguments": [
         "5000"
       ],
       "Conditions": [],
-      "Note": "Treasure 5",
+      "Note": "Rest Site 5",
       "Flags": "None"
     },
     {
@@ -1008,7 +1008,12 @@
   ],
   "Meta": {
     "CreatedAt": 344,
-    "Changelog": [],
+    "Changelog": [
+      {
+        "Version": 352,
+        "Change": "Changed Fight from Zu to right path"
+      }
+    ],
     "Notes": []
   }
 }
