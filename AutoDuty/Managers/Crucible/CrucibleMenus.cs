@@ -40,13 +40,13 @@ namespace AutoDuty.Managers
         private List<int>? restPicks;
         private int        restStep;
 
-        private readonly HashSet<uint> shopTried = [];
-        private DateTime   shopNext;
-        private DateTime   feedFrom = DateTime.MinValue;
-        private List<int>? feedOrder;
-        private int        feedTry;
-        private bool       fedThisVisit;
-        private bool       closedThisVisit;
+        private readonly HashSet<uint>                         shopTried = [];
+        private          DateTime                              shopNext;
+        private          DateTime                              feedFrom = DateTime.MinValue;
+        private          List<ReaderXBMPetParty.MonsterEntry>? feedOrder;
+        private          int                                   feedTry;
+        private          bool                                  fedThisVisit;
+        private          bool                                  closedThisVisit;
 
         private DateTime itemNext;
         private DateTime itemLastUse = DateTime.MinValue;
@@ -142,11 +142,11 @@ namespace AutoDuty.Managers
             if (CrucibleUi.IsOpen(CrucibleUi.YesNo) || now < this.fightNext)
                 return true;
 
-            List<CrucibleUi.TeamRow>? team = CrucibleUi.Team();
+            List<ReaderXBMPetParty.MonsterEntry>? team = CrucibleUi.Team();
             if (team == null || team.Count == 0)
                 return true;
 
-            List<int> alive = CrucibleTeam.FightOrder(team).Take(FightPicks).ToList();
+            List<ReaderXBMPetParty.MonsterEntry> alive = CrucibleTeam.FightOrder(team).Take(FightPicks).ToList();
             if (alive.Count == 0)
             {
                 this.Status = "Every familiar is knocked out";
@@ -158,7 +158,7 @@ namespace AutoDuty.Managers
 
             if (this.fightStep < alive.Count)
             {
-                int row = alive[this.fightStep];
+                int row = alive[this.fightStep].index;
                 Screens.PetParty.Pick(party, row);
                 this.fightStep++;
                 this.fightNext = now + PickInterval;
@@ -210,15 +210,14 @@ namespace AutoDuty.Managers
                     return;
 
                 // Picking nobody gives a 90% heal
-                this.restPicks = rows.Select((row, index) => (row, index))
-                                     .Where(x => x.row is { Hp: > 0, CurrentHp: > 0 } && (float)x.row.CurrentHp / x.row.Hp < RestBelow)
-                                     .OrderBy(x => (float)x.row.CurrentHp / x.row.Hp)
+                this.restPicks = rows.Where(x => x is { MaxHP: > 0, HP: > 0 } && (float)x.HP / x.HP < RestBelow)
+                                     .OrderBy(x => (float)x.HP / x.MaxHP)
                                      .Take(RestPicks)
                                      .Select(x => x.index)
                                      .ToList();
                 this.restStep = 0;
 
-                string names = string.Join(", ", this.restPicks.Select(i => $"{rows[i].Name} {rows[i].CurrentHp}/{rows[i].Hp}"));
+                string names = string.Join(", ", this.restPicks.Select(i => $"{rows[i].Name} {rows[i].HP}/{rows[i].MaxHP}"));
                 Svc.Log.Info($"[Crucible] Campsite: resting with {(names.Length > 0 ? names : "no familiars (90% self heal)")}");
             }
 
@@ -349,10 +348,14 @@ namespace AutoDuty.Managers
             if (party == null || CrucibleUi.IsOpen(CrucibleUi.YesNo))
                 return;
 
+            ReaderXBMPetParty petParty = new(party);
+
             if (this.feedOrder == null)
             {
-                if (CrucibleUi.Team() is not { Count: > 0 } team)
+                if (CrucibleUi.Team(petParty) is not { Count: > 0 } team)
                     return;
+
+                team = team.Where(x => x.Disabled).ToList();
                 this.feedOrder = CrucibleTeam.FightOrder(team);
             }
 
@@ -364,7 +367,7 @@ namespace AutoDuty.Managers
                 return;
             }
 
-            Screens.PetParty.Pick(party, this.feedOrder[this.feedTry]);
+            Screens.PetParty.Pick(party, this.feedOrder[this.feedTry].index);
             this.feedTry++;
             this.confirmFrom = now;
             this.shopNext    = now + FeedRetry;
