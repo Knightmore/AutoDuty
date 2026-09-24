@@ -403,8 +403,7 @@ namespace AutoDuty.Managers
 
             internal static class Treasure
             {
-                public const uint FirstItemParam = 2;
-
+                public static void Close(AtkUnitBase* treasure) => AddonHelper.FireCallBack(treasure, true, 0);
                 public static void Take(AtkUnitBase* treasure, uint nodeId) => AddonHelper.FireCallBack(treasure, true, 2, nodeId);
             }
 
