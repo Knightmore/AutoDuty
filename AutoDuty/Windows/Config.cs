@@ -468,6 +468,23 @@ public static class ConfigTab
                             }
                         }
                     }
+
+                    if (ImGui.CollapsingHeader("XBMParty"))
+                    {
+                        unsafe
+                        {
+                            if (GenericHelpers.TryGetAddonByName("XBMPetParty", out AtkUnitBase* addon))
+                            {
+                                ReaderXBMPetParty x = new(addon);
+                                ImGui.Text("Pets:");
+                                ImGui.Indent();
+                                foreach (ReaderXBMPetParty.MonsterEntry entry in x.TeamEntries)
+                                    ImGui.Text($"Pet: {entry.Rank} | {entry.Name.GetText()} | {entry.Number} | {entry.Unk1} | {entry.Disabled}");
+                                ImGui.Unindent();
+
+                            }
+                        }
+                    }
                     ImGui.Unindent();
                 }
 
