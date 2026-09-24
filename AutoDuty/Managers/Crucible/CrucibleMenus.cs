@@ -9,6 +9,9 @@ namespace AutoDuty.Managers
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using ECommons;
+    using ECommons.UIHelpers.AddonMasterImplementations;
+    using Helpers;
     using Screens = CrucibleUi.Screens;
 
     internal sealed unsafe class CrucibleMenus
@@ -97,7 +100,7 @@ namespace AutoDuty.Managers
 
             this.restPicks = null;
 
-            if (Config.Treasure && CrucibleUi.TryReady(CrucibleUi.TreasureWindow, out AtkUnitBase* treasure))
+            if (CrucibleUi.TryReady(CrucibleUi.TreasureWindow, out AtkUnitBase* treasure))
             {
                 this.PickTreasure(treasure, now);
                 return;
@@ -178,6 +181,13 @@ namespace AutoDuty.Managers
 
             ReaderXBMContentsTreasure xbmTreasure = new(treasure);
 
+            if (!Config.Treasure)
+            {
+                Screens.Treasure.Close(treasure);
+                this.confirmFrom = now;
+                return;
+            }
+
             HashSet<uint> items = xbmTreasure.ItemEntriesValid.Select(ie => ie.Id).ToHashSet();
             HashSet<uint> gear  = xbmTreasure.OwnedEntriesOwned.Select(ie => ie.Id).ToHashSet();
 
@@ -185,7 +195,10 @@ namespace AutoDuty.Managers
                                                                                                              (!CrucibleItemData.ShopGear.Contains(tc.Item)    || (gear.Count < GearCap && !gear.Contains(tc.Item))) &&
                                                                                                              (!CrucibleItemData.ShopHealing.Contains(tc.Item) || (items.Count < ItemCap && !items.Contains(tc.Item)))).ToList();
             if (choices.Count == 0)
-                return;
+            {
+                Screens.Treasure.Close(treasure);
+                this.confirmFrom = now;
+            }
 
             ReaderXBMContentsTreasure.TreasureChoice best = choices.OrderBy(x => CrucibleItemData.TreasureRank(x.Item)).ThenBy(x => x.treasureIndex).First();
 
@@ -251,6 +264,21 @@ namespace AutoDuty.Managers
             if (!Config.Shop)
             {
                 this.ResetShopVisit();
+                AtkUnitBase* shopWindow = CrucibleUi.Ready(CrucibleUi.ShopWindow);
+                if (shopWindow != null)
+                {
+                    if (now - this.confirmFrom <= ConfirmWindow && CrucibleUi.TryReady(CrucibleUi.YesNo, out AtkUnitBase* yesQuit))
+                    {
+                        new AddonMaster.SelectYesno(yesQuit).Yes();
+                        this.confirmFrom = DateTime.MinValue;
+                        this.shopNext    = now + ShopStep;
+                        return;
+                    }
+
+                    if (Screens.ItemShop.Close(shopWindow))
+                        this.confirmFrom = now;
+                }
+
                 return;
             }
 
